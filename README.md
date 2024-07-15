@@ -90,6 +90,9 @@ Replace the values with your database configuration.
   ```bash
 go run main.go 
 ```
+```bash 
+go mod vendor 
+```
 ## Testing
 To run tests of service:
 ```bash
