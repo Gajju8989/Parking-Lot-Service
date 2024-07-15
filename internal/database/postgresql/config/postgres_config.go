@@ -13,7 +13,7 @@ import (
 var db *gorm.DB
 
 func InitDB() {
-	// Load environment variables from local.env file
+	// Load environment variables from .env file
 	if err := godotenv.Load("local.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -35,8 +35,6 @@ func InitDB() {
 		log.Fatal("Error connecting to database:", err)
 	}
 
-	// Uncomment to enable auto migration (create tables based on struct models)
-	// db.AutoMigrate(&YourModel{})
 }
 
 func GetDB() *gorm.DB {

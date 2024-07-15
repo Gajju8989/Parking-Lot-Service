@@ -2,12 +2,12 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"parking_lot_service/internal/repo/models"
 )
 
+// SeedParkingSpace seeds the database with initial parking space records if none exist.
+// It checks for existing records, and if none are found, it inserts predefined parking spaces.
 func (s *impl) SeedParkingSpace(ctx context.Context) error {
 	var count int64
 	err := s.db.
@@ -58,6 +58,7 @@ func (s *impl) SeedParkingSpace(ctx context.Context) error {
 	return nil
 }
 
+// GetParkingSpaces retrieves all parking spaces from the database.
 func (s *impl) GetParkingSpaces(ctx context.Context) ([]*models.ParkingSpace, error) {
 	var parkingSpaces []*models.ParkingSpace
 
@@ -73,6 +74,7 @@ func (s *impl) GetParkingSpaces(ctx context.Context) ([]*models.ParkingSpace, er
 	return parkingSpaces, nil
 }
 
+// GetFreeParkingSpaceById retrieves free parking spaces for a given parking lot ID.
 func (s *impl) GetFreeParkingSpaceById(ctx context.Context, parkingLotId int) ([]*models.ParkingSpace, error) {
 	var parkingSpaces []*models.ParkingSpace
 
@@ -89,26 +91,7 @@ func (s *impl) GetFreeParkingSpaceById(ctx context.Context, parkingLotId int) ([
 	return parkingSpaces, nil
 }
 
-func (s *impl) DecreaseAvailableSpot(ctx context.Context, parkingSpace *models.ParkingSpace) error {
-	result := s.
-		db.
-		WithContext(ctx).
-		Model(&models.ParkingSpace{}).
-		Where("parking_lot_id = ?", parkingSpace.ParkingLotId).
-		Where("vehicle_type_id = ?", parkingSpace.VehicleTypeId).
-		UpdateColumn("available_spots", gorm.Expr("available_spots - ?", 1))
-
-	if result.Error != nil {
-		return result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return errors.New("no parking space updated")
-	}
-
-	return nil
-}
-
+// SaveParkedVehicle saves a parked vehicle record to the database.
 func (s *impl) SaveParkedVehicle(ctx context.Context, vehicleDetail *models.ParkedVehicle) error {
 	err := s.
 		db.
@@ -121,21 +104,23 @@ func (s *impl) SaveParkedVehicle(ctx context.Context, vehicleDetail *models.Park
 	return nil
 }
 
+// GetAvailableParkingSpotsByParkingLotIdAndVehicleId counts available parking spots by parking lot ID and vehicle type ID.
 func (s *impl) GetAvailableParkingSpotsByParkingLotIdAndVehicleId(ctx context.Context,
 	parkingLotId, vehicleId int) (int, error) {
-	var count int64
+	resp := models.ParkingSpace{}
 	err := s.db.WithContext(ctx).
 		Model(&models.ParkingSpace{}).
 		Where("parking_lot_id = ? AND vehicle_type_id = ?", parkingLotId, vehicleId).
-		Count(&count).
+		First(&resp).
 		Error
 
 	if err != nil {
 		return 0, err
 	}
-	return int(count), nil
+	return resp.AvailableSpots, nil
 }
 
+// UpdateParkingSpace updates the available spots of a parking space in the database.
 func (s *impl) UpdateParkingSpace(ctx context.Context, parkingSpace *models.ParkingSpace) error {
 	err := s.
 		db.
