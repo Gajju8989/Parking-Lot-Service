@@ -159,7 +159,7 @@ func (s *impl) GetParkedVehicle(ctx context.Context, vehicleNumber string) (*mod
 
 	// Check if the vehicle exists
 	err := s.db.WithContext(ctx).
-		Where(vehicleNumber).
+		Where("vehicle_number = ?", vehicleNumber).
 		First(&existingVehicle).
 		Error
 

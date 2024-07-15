@@ -236,6 +236,7 @@ func (s *impl) UnParkVehicle(ctx context.Context, req *model.UnParkVehicleReques
 	return response, nil
 
 }
+
 func calculateFare(parkingLotID int, vehicleTypeId int, duration time.Duration) (float64, error) {
 	var tariffModels = map[int]map[int]model.Tariff{
 		1: {
@@ -249,7 +250,6 @@ func calculateFare(parkingLotID int, vehicleTypeId int, duration time.Duration) 
 			3: {HourlyRate: 100},                           // Buses/Trucks
 		},
 	}
-	// CalculateFare calculates the parking fare based on the tariff model, vehicle type, and duration.
 
 	tariff, ok := tariffModels[parkingLotID][vehicleTypeId]
 	if !ok {
@@ -258,31 +258,50 @@ func calculateFare(parkingLotID int, vehicleTypeId int, duration time.Duration) 
 
 	// Calculate the number of hours rounded up
 	hours := int(duration.Hours())
-	if duration.Minutes() > 0 {
+	remainingMinutes := int(duration.Minutes()) % 60
+	if remainingMinutes > 0 {
 		hours++
 	}
 
 	// Calculate the fare based on the tariff model
 	switch {
 	case tariff.DayRate > 0 && duration <= tariff.MaxDurationForDayRate:
-		return float64(hours) * tariff.HourlyRate, nil
+		// Case 1: If a day rate exists and the duration is within the max duration for the day rate
+		{
+			return float64(hours) * tariff.HourlyRate, nil
+		}
 	case tariff.DayRate > 0 && duration > tariff.MaxDurationForDayRate:
-		days := int(duration / tariff.MaxDurationForDayRate)
-		remainingHours := duration - time.Duration(days)*tariff.MaxDurationForDayRate
-		remainingFullHours := int(remainingHours.Hours())
-		if remainingHours.Hours() > float64(remainingFullHours) {
-			remainingFullHours++
-		}
-		return float64(days)*tariff.DayRate + float64(remainingFullHours)*tariff.HourlyRate, nil
-	case tariff.FirstHourRate > 0 && tariff.AdditionalHourRate > 0:
-		if hours == 1 {
-			return tariff.FirstHourRate, nil
-		}
-		return tariff.FirstHourRate + float64(hours-1)*tariff.AdditionalHourRate, nil
-	default:
-		return float64(hours) * tariff.HourlyRate, nil
-	}
+		// Case 2: If a day rate exists and the duration exceeds the max duration for the day rate
+		{
+			days := int(duration / tariff.MaxDurationForDayRate)
+			remainingHours := duration - time.Duration(days)*tariff.MaxDurationForDayRate
 
+			// Calculate the additional hours beyond the max day rate duration
+			additionalHours := int(remainingHours.Hours())
+			if remainingHours.Minutes() > float64(additionalHours*60) {
+				additionalHours++
+			}
+			days--
+			fare := (float64(days) * tariff.DayRate) + (float64(additionalHours) * tariff.HourlyRate) +
+				(float64(tariff.MaxDurationForDayRate.Hours()) * tariff.HourlyRate)
+
+			return fare, nil
+		}
+	case tariff.FirstHourRate > 0 && tariff.AdditionalHourRate > 0:
+		// Case 3: If a special rate exists for the first hour and a different rate for additional hours
+		{
+			if hours == 1 {
+				return tariff.FirstHourRate, nil
+			}
+			additionalHours := hours - 1
+			return tariff.FirstHourRate + float64(additionalHours)*tariff.AdditionalHourRate, nil
+		}
+	default:
+		// Case 4: Default case with a standard hourly rate
+		{
+			return float64(hours) * tariff.HourlyRate, nil
+		}
+	}
 }
 
 func handleCommonErrors(err error) *genericresponse.GenericResponse {
