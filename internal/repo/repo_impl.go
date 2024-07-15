@@ -109,11 +109,11 @@ func (s *impl) DecreaseAvailableSpot(ctx context.Context, parkingSpace *models.P
 	return nil
 }
 
-func (s *impl) SaveParkedVehicle(ctx context.Context, parkingSpace *models.ParkedVehicle) error {
+func (s *impl) SaveParkedVehicle(ctx context.Context, vehicleDetail *models.ParkedVehicle) error {
 	err := s.
 		db.
 		WithContext(ctx).
-		Create(&parkingSpace).
+		Create(&vehicleDetail).
 		Error
 	if err != nil {
 		return err
@@ -121,6 +121,65 @@ func (s *impl) SaveParkedVehicle(ctx context.Context, parkingSpace *models.Parke
 	return nil
 }
 
-func (s *impl) IncreaseAvailableSpot(ctx context.Context, parkingSpace *models.ParkedVehicle) error {
+func (s *impl) GetAvailableParkingSpotsByParkingLotIdAndVehicleId(ctx context.Context,
+	parkingLotId, vehicleId int) (int, error) {
+	var count int64
+	err := s.db.WithContext(ctx).
+		Model(&models.ParkingSpace{}).
+		Where("parking_lot_id = ? AND vehicle_type_id = ?", parkingLotId, vehicleId).
+		Count(&count).
+		Error
+
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (s *impl) UpdateParkingSpace(ctx context.Context, parkingSpace *models.ParkingSpace) error {
+	err := s.
+		db.
+		WithContext(ctx).
+		Model(&models.ParkingSpace{}).
+		Where("parking_lot_id = ? AND vehicle_type_id = ?", parkingSpace.ParkingLotId, parkingSpace.VehicleTypeId).
+		Updates(map[string]interface{}{
+			"available_spots": parkingSpace.AvailableSpots,
+		}).
+		Error
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetParkedVehicle checks if a parked vehicle exists in the database and returns it.
+func (s *impl) GetParkedVehicle(ctx context.Context, vehicleNumber string) (*models.ParkedVehicle, error) {
+	var existingVehicle models.ParkedVehicle
+
+	// Check if the vehicle exists
+	err := s.db.WithContext(ctx).
+		Where(vehicleNumber).
+		First(&existingVehicle).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingVehicle, nil
+}
+
+// DeleteParkedVehicle deletes the specified parked vehicle from the database.
+func (s *impl) DeleteParkedVehicle(ctx context.Context, parkedVehicle *models.ParkedVehicle) error {
+	// Delete the vehicle
+	err := s.db.WithContext(ctx).
+		Delete(parkedVehicle).
+		Error
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -32,5 +32,4 @@ type ParkedVehicle struct {
 	VehicleTypeId VehicleType `gorm:"not null"`
 	VehicleName   string      `gorm:"type:varchar(150)"`
 	EntryTime     time.Time   `gorm:"not null"`
-	ExitTime      *time.Time  `gorm:"default:null"`
 }

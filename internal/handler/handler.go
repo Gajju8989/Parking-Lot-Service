@@ -9,6 +9,7 @@ type ParkingLotHandler interface {
 	GetFreeParkingSpaces(c echo.Context) error
 	GetParkingSpaceByParkingLotId(c echo.Context) error
 	ParkVehicle(c echo.Context) error
+	UnParkVehicle(c echo.Context) error
 }
 
 type impl struct {

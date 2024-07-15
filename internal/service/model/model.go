@@ -30,13 +30,29 @@ type ParkingTicket struct {
 }
 
 type UnParkVehicleRequest struct {
-	ParkingLotID  models.ParkingLot `json:"parking_lot_id"`
-	VehicleNumber string            `json:"vehicle_number"`
-	VehicleID     int               `json:"vehicle_id"`
+	ParkingLotID  models.ParkingLot  `json:"parking_lot_id" binding:"required"`
+	VehicleNumber string             `json:"vehicle_number" binding:"required"`
+	VehicleID     models.VehicleType `json:"vehicle_id" binding:"required"`
 }
 
 type UnParkVehicleResponse struct {
 	Parking ParkingReceipt `json:"parking_receipt"`
 }
+
 type ParkingReceipt struct {
+	VehicleNumber string  `json:"vehicle_number"`
+	TotalFare     float64 `json:"total_fare"`
+	From          string  `json:"from"`
+	To            string  `json:"to"`
+	VehicleID     int     `json:"vehicle_id"`
+	ParkingLotID  int     `json:"parking_lot_id"`
+}
+
+// Tariff represents the tariff details for different vehicle types in a parking lot.
+type Tariff struct {
+	HourlyRate            float64
+	DayRate               float64
+	FirstHourRate         float64
+	AdditionalHourRate    float64
+	MaxDurationForDayRate time.Duration
 }

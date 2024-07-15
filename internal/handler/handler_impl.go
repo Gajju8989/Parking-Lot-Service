@@ -65,3 +65,22 @@ func (s *impl) ParkVehicle(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, resp)
 }
+
+func (s *impl) UnParkVehicle(c echo.Context) error {
+	ctx := c.Request().Context()
+	req := &model.UnParkVehicleRequest{}
+	err := c.Bind(&req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	resp, err := s.parkingLotSvc.UnParkVehicle(ctx, req)
+	if err != nil {
+		genericErr, ok := err.(*genericresponse.GenericResponse)
+		if ok {
+			return c.JSON(genericErr.StatusCode, genericErr)
+
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+	return c.JSON(http.StatusOK, resp)
+}
