@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    image: golang:1.21
+    container_name: golang_app
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=123
+      - DB_NAME=parking_lot_service
+    depends_on:
+      - postgres
+    command: >
+      sh -c "
+      go mod tidy &&
+      go run main.go
+      "
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: parking_lot_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
